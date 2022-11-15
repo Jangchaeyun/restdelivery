@@ -5,6 +5,9 @@ import {MdFastfood, MdCloudUpload, MdDelete, MdFoodBank} from 'react-icons/md';
 import { FaWonSign } from 'react-icons/fa'
 import { categories } from '../utils/data';
 import Loader from './Loader';
+import { deleteObject, getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
+import { storage } from "../firebase.config"
+import { saveItem } from '../utils/firebaseFunctions';
 
 const CreateContainer = () => {
 
@@ -18,17 +21,105 @@ const CreateContainer = () => {
   const [msg, setMsg] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const uploadImage = () => {
+  const uploadImage = (e) => {
+    setIsLoading(true);
+    const imageFile = e.target.files[0];
+    const storageRef = ref(storage, `images/${Date.now()}-${imageFile.name}`)
+    const uploadTask = uploadBytesResumable(storageRef, imageFile);
 
+    uploadTask.on('state_changed', 
+    (snapshot) => {
+      const uploadProgress = (
+        snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+    }, (error) => {
+      console.log(error);
+      setFields(true);
+      setMsg('업로드 중 오류 발생 : 다시 시도하세요! 🙇');
+      setAlertStatus('danger');
+      setTimeout(() => {
+        setFields(false);
+        setIsLoading(false)
+      }, 4000);
+    }, () => {
+      getDownloadURL(uploadTask.snapshot.ref).then(downloadURL => {
+        setImageAsset(downloadURL);
+        setIsLoading(false);
+        setFields(true);
+        setMsg("이미지가 성공적으로 업로드되었습니다. 😊");
+        setAlertStatus("success");
+        setTimeout(() => {
+          setFields(false);
+        }, 4000);
+      })
+    })
   };
 
   const deleteImage = () => {
-
+    setIsLoading(true);
+    const deleteRef = ref(storage, imageAsset);
+    deleteObject(deleteRef).then(() => {
+      setImageAsset(null)
+      setIsLoading(false)
+      setFields(true);
+        setMsg("이미지가 성공적으로 삭제되었습니다. 😊");
+        setAlertStatus("success");
+        setTimeout(() => {
+          setFields(false);
+        }, 4000);
+    })
   };
 
   const saveDetails = () => {
+    setIsLoading(true);
+    try {
+      if((!title || !calories || !imageAsset || !price || !category)) {
 
+        setFields(true);
+        setMsg('필수 입력란은 비워둘 수 없습니다.');
+        setAlertStatus('danger');
+        setTimeout(() => {
+          setFields(false);
+          setIsLoading(false)
+        }, 4000);
+      } else {
+        const data = {
+          id : `${Date.now()}`,
+          title: title,
+          imageUrl : imageAsset,
+          category : category,
+          calories: calories,
+          qty : 1,
+          price : price
+        }
+        saveItem(data);
+        setIsLoading(false);
+        setFields(true);
+        setMsg("데이터가 성공적으로 업로드되었습니다. 😊");
+        clearData();
+        setAlertStatus("success");
+        setTimeout(() => {
+          setFields(false);
+        }, 4000);
+      }
+    } catch (error) {
+      console.log(error);
+      setFields(true);
+      setMsg('업로드 중 오류 발생 : 다시 시도하세요! 🙇');
+      setAlertStatus('danger');
+      setTimeout(() => {
+        setFields(false);
+        setIsLoading(false)
+      }, 4000);
+    }
   };
+
+  const clearData = () => {
+    setTitle("");
+    setImageAsset(null);
+    setCalories("");
+    setPrice("");
+    setCategory("카테고리 선택")
+  }
 
   return (
     <div className="w-full min-h-screen flex items-center justify-center">
@@ -80,7 +171,7 @@ const CreateContainer = () => {
           </select>
         </div>
 
-        <div className="group flex justify-center felx-col border-2 border-dotted border-gray-300 w-full h-225 md:h-420 cursor-pointer rounded-lg">
+        <div className="group flex justify-center items-center felx-col border-2 border-dotted border-gray-300 w-full h-225 md:h-420 cursor-pointer rounded-lg">
           {isLoading ? (
             <Loader />
           ) : (
