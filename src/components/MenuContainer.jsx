@@ -2,10 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { IoFastFood } from 'react-icons/io5';
 import { categories } from '../utils/data';
 import { motion } from 'framer-motion';
+import RowContainer from './RowContainer';
+import { useStateValue } from '../context/StateProvider';
 
 const MenuContainer = () => {
 
     const [filter, setFilter] = useState('korean');
+
+    const [{foodItems}, dispatch] = useStateValue()
 
     useEffect(() => {
 
@@ -15,7 +19,7 @@ const MenuContainer = () => {
     <div className="w-full my-6" id='menu'>
       <div className="w-full flex flex-col items-center justify-center">
         <p className="text-2xl font-semibold capitalize text-headingColor relative before:absolute before:rounded-lg before:content before:w-16 before:h-1 before:-bottom-2 before:left-0 before:bg-gradient-to-tr from-orange-400 to-orange-600 tranisiton-all ease-in-out duration-100 mr-auto">
-            인기 있는 밀키트
+            밀키트
         </p>
 
         <div className="w-full flex itmes-center justify-start lg:justify-center gap-8 py-6 overflow-x-scroll scrollbar-none">
@@ -52,6 +56,12 @@ const MenuContainer = () => {
                     </p>
                 </motion.div>
             ))}
+        </div>
+        <div className="w-full">
+            <RowContainer 
+                flag={false} 
+                data={foodItems?.filter((n) => n.category ===  filter)} 
+            />
         </div>
       </div>
     </div>
