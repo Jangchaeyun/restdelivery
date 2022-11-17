@@ -9,11 +9,7 @@ const MenuContainer = () => {
 
     const [filter, setFilter] = useState('korean');
 
-    const [{foodItems}, dispatch] = useStateValue()
-
-    useEffect(() => {
-
-    }, [filter]);
+    const [{foodItems}, dispatch] = useStateValue();
 
   return (
     <div className="w-full my-6" id='menu'>
