@@ -1,15 +1,17 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { MdOutlineKeyboardBackspace} from 'react-icons/md';
 import { motion } from "framer-motion";
 import { RiRefreshFill } from 'react-icons/ri'
-import { BiMinus, BiPlus } from 'react-icons/bi'
 import { useStateValue } from '../context/StateProvider';
 import { actionType } from '../context/reducer';
 import EmptyCart from '../img/emptyCart.svg'
+import CartItem from './CartItem';
 
 const CartContainer = () => {
 
   const [{ cartShow, cartItems, user }, dispatch] = useStateValue();
+  const [flag, setFlag] = useState(1);
+  const [tot, setTot] = useState(0);
 
   const showCart = () => {
     dispatch({
@@ -17,6 +19,23 @@ const CartContainer = () => {
         cartShow: !cartShow,
     });
   }
+
+  useEffect(() => {
+    let totalPrice = cartItems.reduce(function (accumulator, item) {
+      return accumulator + item.qty * item.price;
+    }, 0);
+    setTot(totalPrice);
+    console.log(tot);
+  }, [tot, flag]);
+
+  const clearCart = () => {
+    dispatch({
+      type: actionType.SET_CART_ITEMS,
+      cartItems: [],
+    });
+
+    localStorage.setItem("cartItems", JSON.stringify([]));
+  };
 
   return (
     <motion.div 
@@ -35,7 +54,7 @@ const CartContainer = () => {
         <motion.p 
           whileTap={{ scale: 0.75 }}
           className="flex items-center gap-2 p-1 px-2 my-2 bg-gray-100 rounded-md hover:shadow-md cursor-pointer text-textColor text-base"
-
+          onClick={clearCart}
         >
           장바구니 비우기
           <RiRefreshFill />{" "}
@@ -46,46 +65,24 @@ const CartContainer = () => {
       {cartItems && cartItems.length > 0 ? (
         <div className="w-full h-full bg-cartBg rounded-t-[2rem] flex flex-col">
           <div className="w-full h-340 md:h-42 px-6 py-10 flex flex-col gap-3 overflow-y-scroll scrollbar-none">
-            {/* cart Item */}
-            {
-              cartItems && cartItems.map(item => (
-                <div key={item.id} className="w-full p-1 px-2 rounded-lg bg-cartItem flex items-center gap-2">
-                  <img 
-                    src={item?.imageUrl} 
-                    className="w-20 h-20 max-w-[60px] rounded-full object-contain" 
-                    alt="" 
-                  />
-      
-                  {/* name section */}
-                  <div className="flex flex-col gap-2">
-                    <p className="text-base text-gray-50">{item?.title}</p>
-                    <p className="text-sm block text-gray-300 font-semibold">{item?.price}원</p>
-                  </div>
-      
-                  {/* button section */}
-                  <div className="group flex items-center gap-2 ml-auto cursor-pointer">
-                    <motion.div whileTap={{ scale : 0.75 }}>
-                      <BiMinus className="text-gray-50" />
-                    </motion.div>
-      
-                    <p className="w-5 h-5 rounded-sm bg-cartBg text-gray-50 flex items-center justify-center">
-                      {item?.qty}
-                    </p>
-      
-                    <motion.div whileTap={{ scale : 0.75 }}>
-                      <BiPlus className="text-gray-50" />
-                    </motion.div>
-                  </div>
-                </div>
-              ))
-            }
+           {/* cart Item */}
+           {cartItems &&
+              cartItems.length > 0 &&
+              cartItems.map((item) => (
+                <CartItem
+                  key={item.id}
+                  item={item}
+                  setFlag={setFlag}
+                  flag={flag}
+                />
+              ))}
           </div>
 
           {/* cart total section */}
           <div className="w-full flex-1 bg-cartTotal rounded-t-[2rem] flex flex-col items-center justify-evenly px-8 py-2">
             <div className="w-full flex items-center justify-between">
               <p className="text-gray-400 text-lg">소계</p>
-              <p className="text-gray-400 text-lg">3500원</p>
+              <p className="text-gray-400 text-lg">{tot}원</p>
             </div>
             <div className="w-full flex items-center justify-between">
               <p className="text-gray-400 text-lg">배달비</p>
@@ -96,7 +93,7 @@ const CartContainer = () => {
 
             <div className="w-full flex items-center justify-between">
               <p className="text-gray-200 text-xl font-semibold">총 금액</p>
-              <p className="text-gray-200 text-xl font-semibold">3600원</p>
+              <p className="text-gray-200 text-xl font-semibold">{tot + 1000}원</p>
             </div>
 
             {user ? (
